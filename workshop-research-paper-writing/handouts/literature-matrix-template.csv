@@ -1,0 +1,16 @@
+CitationKey,Year,Venue,VenueType,Indexing,ResearchProblem,Dataset(s),SplitProtocol,SplitUnit,Method,NovelComponent,Baselines,NumBaselines,Metrics,KeyResult,Variance/CI,StatTest,Seeds,CostReported,CodeAvailable,Strengths,Limitations_Theirs,Limitations_Mine,GapItLeaves,FutureWork_Verbatim,GapType,Relevance,ContradictsWhich,DOI_Verified
+Wang2023DenseCXR,2023,IEEE TMI,journal,SCIE Q1,Cross-hospital degradation of CXR classifiers,CheXpert,random,patient,DenseNet-121,none (reimplementation),ResNet-50,1,AUC,0.90 macro AUC in-domain,none,none,1,no,yes,Large dataset; clear write-up,"""limited to frontal views"" (Sec VI p.11)",Random split leaks site identity; single seed; untuned baseline; no calibration,Leakage-free re-evaluation missing,"""extend to lateral and paediatric views""",evaluation;generalisation,core,P4,yes
+EXAMPLE-ROW-DELETE-ME,2024,Proc. CVPR,conference,Scopus,,,site-wise,site,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,

@@ -1,0 +1,16 @@
+{
+  "name": "research-writing-workshop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "2-Day Workshop: Research Paper Writing and Research Tools - From Research Idea to Journal Publication",
+  "scripts": {
+    "html": "marp --no-stdin slides/day1.md -o build/day1.html --theme slides/theme.css --html && marp --no-stdin slides/day2.md -o build/day2.html --theme slides/theme.css --html",
+    "pdf": "marp --no-stdin slides/day1.md -o build/day1.pdf --theme slides/theme.css --html --pdf --pdf-notes --allow-local-files && marp --no-stdin slides/day2.md -o build/day2.pdf --theme slides/theme.css --html --pdf --pdf-notes --allow-local-files",
+    "pptx": "marp --no-stdin slides/day1.md -o build/day1.pptx --theme slides/theme.css --html --pptx --allow-local-files && marp --no-stdin slides/day2.md -o build/day2.pptx --theme slides/theme.css --html --pptx --allow-local-files",
+    "build": "npm run html && npm run pdf && npm run pptx",
+    "count": "grep -c '^---$' slides/day1.md slides/day2.md"
+  },
+  "devDependencies": {
+    "@marp-team/marp-cli": "^3.4.0"
+  }
+}
