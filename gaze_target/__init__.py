@@ -25,3 +25,18 @@ __all__ = [
     "TemporalConfig",
     "TemporalDecision",
 ]
+
+# Open-vocabulary detection is optional: it needs the `tokenizers` package and
+# the OWLv2 weights. Import lazily so the core pipeline works without them.
+try:  # pragma: no cover
+    from .object_detector import ObjectDetection, OpenVocabDetector
+    from .registry import DEFAULT_VOCAB, ObjectRegistry
+
+    __all__ += [
+        "ObjectDetection",
+        "OpenVocabDetector",
+        "ObjectRegistry",
+        "DEFAULT_VOCAB",
+    ]
+except ImportError:  # tokenizers not installed
+    pass

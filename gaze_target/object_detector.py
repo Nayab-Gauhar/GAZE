@@ -148,7 +148,15 @@ class OpenVocabDetector:
         score_threshold: float = 0.15,
         iou_threshold: float = 0.4,
         max_per_prompt: int = 3,
+        dedupe_across_labels: bool = True,
     ) -> list[ObjectDetection]:
+        """
+        dedupe_across_labels:
+            NMS is per-prompt, so with a large vocabulary two *different* labels
+            routinely claim the same region (a bright rectangle scoring as both
+            "television" and "tissue box"). When true, overlapping boxes from
+            different labels are collapsed to the highest-scoring one.
+        """
         if not prompts:
             return []
 
@@ -203,6 +211,14 @@ class OpenVocabDetector:
                 )
 
         results.sort(key=lambda d: d.score, reverse=True)
+
+        if dedupe_across_labels and len(results) > 1:
+            boxes = np.array([r.box for r in results], dtype=np.float32)
+            scores = np.array([r.score for r in results], dtype=np.float32)
+            keep = _nms(boxes, scores, iou_threshold)
+            results = [results[i] for i in sorted(keep)]
+            results.sort(key=lambda d: d.score, reverse=True)
+
         return results
 
     def best_per_prompt(

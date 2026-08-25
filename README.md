@@ -41,9 +41,50 @@ python scripts/fetch_testdata.py
 
 ## Quickstart
 
-Registering targets can be **automatic** (name the objects, OWLv2 finds them) or
-**manual** (click boxes). Auto is zero-setup; manual is fully reliable and can
-represent abstract needs. They write the same config, so you can mix them.
+### Fully automatic — no setup at all
+
+Point the camera and it names the object being looked at. No config file, no
+labels to define, no boxes to click:
+
+```bash
+./scripts/download_owlv2.sh && pip install tokenizers   # one time, 163 MB
+python scripts/run_gaze_object.py --camera 0
+```
+
+```
+LOOKING AT: LAPTOP COMPUTER
+15.5 FPS | 4 objects | scan #1
+```
+
+Restrict the vocabulary if you want only certain things considered:
+
+```bash
+python scripts/run_gaze_object.py --camera 0 \
+    --vocab "water bottle" "mobile phone" "medicine strip" "bowl of food"
+```
+
+**How the two speeds are reconciled.** The object detector costs ~5 s on CPU, so
+it cannot run per frame. It runs on a **background thread** every `--refresh`
+seconds (default 6) while the gaze stage keeps running per frame against the most
+recent object list. Bedside objects move rarely, so a slightly stale list is fine
+— and a moved object or a knocked camera **self-heals within one refresh
+interval**, which pre-registered boxes can never do.
+
+Cost of that convenience: throughput drops from **35 → ~15 FPS**, because the
+background detector competes for the same CPU cores. Still ample, since the dwell
+window dominates response time. Raise `--refresh` to claw back frame rate.
+
+Verified on a 120-frame sequence: auto-found `laptop computer` (0.747),
+`spectacles` (0.531), `mobile phone` (0.354), `cup` (0.293), then correctly
+reported **laptop computer** (belief 0.995) and fell back to `NONE` when the
+subject left frame.
+
+### Or register a fixed set of targets
+
+Useful when you want stable named labels (`WATER`, `PAIN`) rather than raw object
+names, or when you need targets that are not detectable objects at all.
+Registration can be **automatic** (name the objects, OWLv2 finds them) or
+**manual** (click boxes). They write the same config, so you can mix them.
 
 ```bash
 # 1a. AUTOMATIC -- name what to look for, it finds them
