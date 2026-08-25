@@ -40,14 +40,11 @@ from gaze_target.object_detector import OpenVocabDetector  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# label -> candidate prompts, best score wins.
-DEFAULT_VOCAB: dict[str, list[str]] = {
-    "WATER": ["water bottle", "drinking glass", "cup of water"],
-    "FOOD": ["bowl of food", "plate of food", "fruit"],
-    "MEDICINE": ["medicine strip", "pill bottle", "blister pack of pills"],
-    "PHONE": ["mobile phone", "smartphone"],
-    "BELL": ["call bell", "small bell", "push button"],
-}
+# The project's six primary vision targets, defined centrally in
+# gaze_target.registry so the automatic and registered modes stay in sync.
+from gaze_target.registry import PROJECT_TARGETS  # noqa: E402
+
+DEFAULT_VOCAB: dict[str, list[str]] = dict(PROJECT_TARGETS)
 
 # Never register these as communication targets even if detected -- they are
 # body parts or furniture, and the patient's own hand often scores highly right
