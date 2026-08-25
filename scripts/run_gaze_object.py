@@ -102,10 +102,15 @@ def main() -> int:
     src.add_argument("--camera", default=None)
     src.add_argument("--video", default=None)
     ap.add_argument("--model", default="atto", choices=list(GAZE_MODELS))
+    ap.add_argument("--detector", default=None,
+                    help="path to a fine-tuned YOLO ONNX (scripts/train_detector.py). "
+                         "~16 ms vs OWLv2's ~5300 ms, so scans can be near-continuous "
+                         "and the class list is fixed rather than open-vocabulary.")
     ap.add_argument("--vocab", nargs="+", default=None,
                     help="objects to look for (default: built-in bedside vocabulary)")
-    ap.add_argument("--refresh", type=float, default=6.0,
-                    help="seconds between background object scans")
+    ap.add_argument("--refresh", type=float, default=None,
+                    help="seconds between object scans "
+                         "(default 6.0 for OWLv2, 0.5 for a trained detector)")
     ap.add_argument("--obj-threshold", type=float, default=0.18)
     ap.add_argument("--max-objects", type=int, default=6)
     ap.add_argument("--width", type=int, default=640)
@@ -119,21 +124,38 @@ def main() -> int:
     if args.camera is None and args.video is None:
         args.camera = 0
 
-    vocab = args.vocab or DEFAULT_VOCAB
-    print(f"vocabulary ({len(vocab)}): {', '.join(vocab)}")
-
     gaze_path = MODELS / GAZE_MODELS[args.model]
     if not gaze_path.is_file():
         print(f"[ERROR] missing {gaze_path.name} -- run ./scripts/download_models.sh")
         return 1
 
+    if args.detector:
+        from gaze_target.yolo_detector import TrainedYoloDetector
+
+        obj_detector = TrainedYoloDetector(args.detector)
+        # A trained detector knows exactly these classes, so the vocabulary is
+        # whatever it was trained on rather than an open text query.
+        vocab = args.vocab or obj_detector.class_names
+        refresh = args.refresh if args.refresh is not None else 0.5
+        threshold = args.obj_threshold if args.obj_threshold != 0.18 else 0.35
+        print(f"detector: trained YOLO ({Path(args.detector).name})")
+        print(f"classes ({len(obj_detector.class_names)}): "
+              f"{', '.join(obj_detector.class_names)}")
+    else:
+        obj_detector = OpenVocabDetector(MODELS / "owlv2")
+        vocab = args.vocab or DEFAULT_VOCAB
+        refresh = args.refresh if args.refresh is not None else 6.0
+        threshold = args.obj_threshold
+        print("detector: OWLv2 open-vocabulary")
+        print(f"vocabulary ({len(vocab)}): {', '.join(vocab)}")
+
     head_det = HeadDetector(MODELS / "deimv2_head.onnx")
     gaze_model = GazelleONNX(gaze_path)
     registry = ObjectRegistry(
-        detector=OpenVocabDetector(MODELS / "owlv2"),
+        detector=obj_detector,
         vocab=list(vocab),
-        score_threshold=args.obj_threshold,
-        refresh_seconds=args.refresh,
+        score_threshold=threshold,
+        refresh_seconds=refresh,
         max_objects=args.max_objects,
     )
 
@@ -156,10 +178,10 @@ def main() -> int:
     if args.camera is not None:
         first = cv2.flip(first, 1)
 
-    print("\nfirst object scan (blocking, ~5 s on CPU)...")
+    print(f"\nfirst object scan (blocking, refresh every {refresh}s)...")
     t0 = time.perf_counter()
     dets = registry.scan_now(first)
-    print(f"done in {time.perf_counter() - t0:.1f} s -- {len(dets)} objects:")
+    print(f"done in {time.perf_counter() - t0:.2f} s -- {len(dets)} objects:")
     for d in dets:
         print(f"   {d.label:<18} {d.score:.3f}  {d.box}")
     if not dets:

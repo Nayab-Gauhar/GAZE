@@ -12,6 +12,13 @@ models/owlv2/
 # Auto-generated target configs
 config/auto_*.json
 
+# Custom detector training: datasets, runs and checkpoints are all local
+data/
+runs/
+*.pt
+*.onnx
+
+
 # Verification images: fetched via scripts/fetch_testdata.py so that no
 # third-party image files are vendored here.
 testdata/*.jpg

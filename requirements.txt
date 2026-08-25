@@ -12,6 +12,12 @@ opencv-python>=4.10
 # This is the standalone Rust tokenizers library -- it does NOT pull in PyTorch.
 tokenizers>=0.20
 
+# Needed only by scripts/train_detector.py to TRAIN a custom detector (pulls in
+# PyTorch, ~2 GB). Inference never needs it -- the trained model is exported to
+# ONNX and run through onnxruntime. NOTE: this installs opencv-python, which
+# needs a display; reinstall opencv-python-headless afterwards on a server.
+# ultralytics>=8.3
+
 # Optional GPU acceleration: replace onnxruntime with onnxruntime-gpu.
 # The 31M "big" model is ~1 FPS on CPU and needs a GPU to be usable.
 # onnxruntime-gpu>=1.20

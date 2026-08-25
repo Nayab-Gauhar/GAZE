@@ -259,6 +259,74 @@ that axis. Tall thin objects are a trap.
 targets at different distances but similar image positions are not separable. This
 is the main reason Option 3 is the cold-start path rather than the primary one.
 
+## Training a custom detector on your own objects
+
+OWLv2 is convenient but unreliable on the specific targets that matter here: it
+missed `MEDICINE` entirely and produced spurious `CALLING_BELL` boxes. Fine-tuning
+a small YOLO on *your* actual objects fixes that, and is far faster.
+
+| | OWLv2 open-vocab | Fine-tuned YOLO-nano |
+|---|---|---|
+| Setup | none | capture + label + train |
+| Latency (CPU) | **~5300 ms** | **~16 ms** (330× faster) |
+| Scan interval | 6 s, background thread | 0.5 s, effectively continuous |
+| New object | type a word | retrain |
+| Reliability on your objects | mixed | high |
+| Reproducible for a paper | moving target | fixed artifact |
+
+### Workflow
+
+```bash
+# 1. Capture. Vary object position, lighting, occlusion, camera angle.
+#    ~40-80 images per object is plenty for a fixed scene.
+python scripts/capture_dataset.py --out data/raw --interval 1.5
+
+# 2. Pre-label with OWLv2 -- you correct rather than draw from scratch.
+python scripts/autolabel.py --images data/raw --out data/yolo --preview
+
+# 3. CORRECT THE LABELS. These are proposals, not ground truth.
+#    The script prints which classes it was weak on -- prioritise those.
+labelImg data/yolo/images/train
+
+# 4. Train and export ONNX. Use a GPU or Colab; CPU works but is slow.
+pip install ultralytics          # training only; inference stays on onnxruntime
+python scripts/train_detector.py --data data/yolo/data.yaml --epochs 80
+
+# 5. Use it -- drops straight in.
+python scripts/run_gaze_object.py --camera 0 --detector models/target_detector.onnx
+```
+
+`TrainedYoloDetector` exposes the same interface as `OpenVocabDetector`, so it
+substitutes into `ObjectRegistry` and the pipeline with no other changes.
+
+### What this does *not* fix
+
+**The 64×64 gaze heatmap ceiling.** A perfect detector still cannot make an
+11-pixel-tall medicine strip separable from its neighbour. That is fixed with
+camera distance and resolution, not with detector quality — run
+`scripts/plan_layout.py` first.
+
+### Two gotchas worth knowing
+
+**`pip install ultralytics` pulls in `opencv-python`**, which needs a display and
+will break a headless machine that had `opencv-python-headless`. Reinstall headless
+afterwards if you are on a server.
+
+**ONNX export is not bit-identical to the PyTorch path.** Ultralytics' PyTorch
+inference is *rectangular* — it pads only to a stride multiple, so a 640×480 frame
+runs at 640×480. An ONNX export has a fixed 640×640 input and must be letterboxed.
+The two see different images and legitimately give slightly different boxes.
+`scripts/verify_detector_decode.py` therefore compares against ultralytics running
+**the same ONNX file**, where agreement is exact:
+
+```
+worst deviation: 0 px (tolerance 2)
+[PASS] box decoding matches ultralytics exactly
+```
+
+Comparing ONNX output against the `.pt` model instead looks like a decoding bug
+when it is not — a trap worth avoiding.
+
 ## Configuration
 
 `config/targets.json`:
