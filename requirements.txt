@@ -8,6 +8,10 @@ requests>=2.31
 # display, where you must pass --headless.
 opencv-python>=4.10
 
+# Needed only by scripts/auto_register.py, for OWLv2 open-vocabulary detection.
+# This is the standalone Rust tokenizers library -- it does NOT pull in PyTorch.
+tokenizers>=0.20
+
 # Optional GPU acceleration: replace onnxruntime with onnxruntime-gpu.
 # The 31M "big" model is ~1 FPS on CPU and needs a GPU to be usable.
 # onnxruntime-gpu>=1.20

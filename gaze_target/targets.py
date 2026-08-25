@@ -38,6 +38,11 @@ HEATMAP_SIDE = 64
 # 3x3 cells is the practical floor for a stable argmax.
 MIN_RELIABLE_CELLS = 9.0
 
+# Area alone is not enough: a tall thin target (a drinking glass, say) can clear
+# the area test while being only ~2 cells wide, which is unreliable along that
+# axis. Each dimension is therefore checked independently.
+MIN_CELLS_PER_SIDE = 2.5
+
 
 @dataclass
 class Target:
@@ -192,6 +197,8 @@ class TargetSet:
             cells_x = (x2 - x1) / cell_w
             cells_y = (y2 - y1) / cell_h
             cells = cells_x * cells_y
+            area_ok = cells >= MIN_RELIABLE_CELLS
+            sides_ok = cells_x >= MIN_CELLS_PER_SIDE and cells_y >= MIN_CELLS_PER_SIDE
             per_target.append(
                 {
                     "label": t.label,
@@ -199,7 +206,9 @@ class TargetSet:
                     "cells_x": round(cells_x, 2),
                     "cells_y": round(cells_y, 2),
                     "cells_total": round(cells, 1),
-                    "reliable": cells >= MIN_RELIABLE_CELLS,
+                    "area_ok": area_ok,
+                    "sides_ok": sides_ok,
+                    "reliable": area_ok and sides_ok,
                 }
             )
 
@@ -224,11 +233,19 @@ class TargetSet:
 
         warnings: list[str] = []
         for pt in per_target:
-            if not pt["reliable"]:
+            if not pt["area_ok"]:
                 warnings.append(
                     f"target '{pt['label']}' covers only {pt['cells_total']} heatmap "
                     f"cells (need >= {MIN_RELIABLE_CELLS:.0f}) -- make it physically "
                     f"larger or move the camera closer"
+                )
+            elif not pt["sides_ok"]:
+                thin = "wide" if pt["cells_x"] < MIN_CELLS_PER_SIDE else "tall"
+                warnings.append(
+                    f"target '{pt['label']}' is only {pt['cells_x']}x{pt['cells_y']} "
+                    f"cells -- too narrow to be reliable (need >= "
+                    f"{MIN_CELLS_PER_SIDE} per side). It has enough area but is not "
+                    f"{thin} enough; use a chunkier target or a printed card"
                 )
         for p in pairs:
             if not p["separable"]:

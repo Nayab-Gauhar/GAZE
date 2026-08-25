@@ -4,9 +4,13 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Model weights: fetched via scripts/download_models.sh.
-# The 31M gaze model is 128 MB, above GitHub's 100 MB per-file limit.
+# Model weights: fetched via scripts/download_models.sh and download_owlv2.sh.
+# The 31M gaze model is 128 MB and OWLv2 is 163 MB, both above GitHub's limit.
 models/*.onnx
+models/owlv2/
+
+# Auto-generated target configs
+config/auto_*.json
 
 # Verification images: fetched via scripts/fetch_testdata.py so that no
 # third-party image files are vendored here.

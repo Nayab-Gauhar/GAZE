@@ -41,8 +41,17 @@ python scripts/fetch_testdata.py
 
 ## Quickstart
 
+Registering targets can be **automatic** (name the objects, OWLv2 finds them) or
+**manual** (click boxes). Auto is zero-setup; manual is fully reliable and can
+represent abstract needs. They write the same config, so you can mix them.
+
 ```bash
-# 1. Register where the targets are (site calibration, done once per bed)
+# 1a. AUTOMATIC -- name what to look for, it finds them
+./scripts/download_owlv2.sh                    # 163 MB, one time
+pip install tokenizers
+python scripts/auto_register.py --camera 0 --out config/targets.json
+
+# 1b. MANUAL -- click a box around each target
 python scripts/register_targets.py --camera 0 --out config/targets.json
 
 # 2. Run live
@@ -52,6 +61,40 @@ python scripts/run_live.py --targets config/targets.json --camera 0
 python scripts/run_live.py --targets config/targets.json --video clip.mp4 \
     --headless --log events.csv
 ```
+
+### Automatic target registration
+
+Uses **OWLv2** open-vocabulary detection ([arXiv:2306.09683](https://arxiv.org/abs/2306.09683)),
+so you can name anything — including things no COCO detector knows, like
+`"medicine strip"` or `"call bell"`. Several prompts per label are allowed and the
+best-scoring match wins:
+
+```bash
+python scripts/auto_register.py --image frame.jpg \
+    --label WATER "water bottle" "drinking glass" \
+    --label PHONE "mobile phone" \
+    --preview out/proposed.png
+```
+
+It runs **once at setup**, so its ~3.5 s CPU latency is irrelevant to runtime
+throughput — which is exactly why a heavyweight model is acceptable here.
+
+Verified end to end on a real photo: auto-detected `LAPTOP` (0.564) and `COFFEE`
+(0.286) from text alone, then the gaze stage correctly predicted **LAPTOP**
+(P=0.858 vs COFFEE 0.049).
+
+**Two real limitations, both worth knowing before you rely on it:**
+
+- **Abstract needs have no object.** `PAIN` and `TOILET` cannot be detected because
+  there is nothing to detect. Use printed symbol cards and `register_targets.py`
+  for those.
+- **Detection can just fail.** On one test photo `PHONE` was correctly reported as
+  not found (there was no phone), but a transparent water bottle against white
+  linen is genuinely hard. The script tells you which labels it missed rather than
+  silently registering nothing, and you can fall back to manual for those.
+
+Body parts and furniture are blocklisted as targets, because the patient's own hand
+often scores highly right next to the object they are holding.
 
 ### Start with the notebook
 
@@ -166,6 +209,11 @@ WATER       118.1  yes               WATER <-> PAIN       19.97  yes
 This is the feasibility check to run **before** collecting data — an unresolvable
 layout cannot be fixed by a better model.
 
+The gate checks **each dimension separately, not just area**. That matters: a real
+auto-detected coffee glass measured 19×79 px = 20 cells of area, which passes an
+area-only test, but it is just **1.9 cells wide** and therefore unreliable along
+that axis. Tall thin objects are a trap.
+
 **3. Depth ambiguity is structural.** The heatmap lives in 2D image space, so two
 targets at different distances but similar image positions are not separable. This
 is the main reason Option 3 is the cold-start path rather than the primary one.
@@ -213,6 +261,11 @@ false `MEDICINE` is the highest-risk misfire. Override with `--labels`.
 - No per-patient adaptation (by design — that is Option 2's job).
 - Single-subject assumption: `primary_head` picks the largest head, so a caregiver
   leaning closer than the patient would be tracked instead.
+- **Head detection is a hard dependency.** If the head is not visible the pipeline
+  produces `NONE` and nothing else — verified on a photo where the subject's head
+  was cropped out (head score 0.032 while the *body* scored 0.908). This is a safe
+  failure rather than a wrong answer, but for a bed-bound patient partially hidden
+  by pillows or lines it is a real risk. A body-box fallback is not implemented.
 - Emits nothing while `refractory` is active.
 - `verify_targets.py` scores the same still frame repeatedly, so it validates
   correctness and plumbing, not temporal robustness on real motion.
