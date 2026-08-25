@@ -23,3 +23,4 @@ reference/
 
 # Site-specific target layout (yours will differ; example is committed)
 config/targets.json
+notebooks/.ipynb_checkpoints/
