@@ -36,8 +36,21 @@ from gaze_target import (  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 MODELS = ROOT / "models"
-PICO = MODELS / "gazelle_hgnetv2_pico_inout_distill_1x3x640x640_1xNx4.onnx"
-BIG = MODELS / "gazelle_dinov3_vits16plus_inout_1x3x640x640_1xNx4.onnx"
+
+# Measured CPU latency at 640x480 on 8 cores (see scripts/benchmark_models.py).
+# Input resolution dominates CPU cost far more than parameter count, which is why
+# atto (2.93M @ 320px, 17 ms) is ~5x faster than pico (3.51M @ 640px, 82 ms)
+# despite a similar parameter budget. atto is the default for that reason.
+GAZE_MODELS = {
+    "atto":  "gazelle_hgnetv2_atto_inout_distill_1x3x320x320_1xNx4.onnx",   #  17 ms
+    "femto": "gazelle_hgnetv2_femto_inout_distill_1x3x416x416_1xNx4.onnx",  #  26 ms
+    "pico":  "gazelle_hgnetv2_pico_inout_distill_1x3x640x640_1xNx4.onnx",   #  82 ms
+    "n":     "gazelle_hgnetv2_n_inout_distill_1x3x640x640_1xNx4.onnx",      #  86 ms
+    "s":     "gazelle_dinov3_vit_tiny_inout_1x3x640x640_1xNx4.onnx",        # 254 ms
+    "m":     "gazelle_dinov3_vit_tinyplus_inout_1x3x640x640_1xNx4.onnx",    # 293 ms
+    "l":     "gazelle_dinov3_vits16_inout_1x3x640x640_1xNx4.onnx",          # 603 ms
+    "x":     "gazelle_dinov3_vits16plus_inout_1x3x640x640_1xNx4.onnx",      # 957 ms
+}
 
 BAR_W = 190
 
@@ -113,7 +126,8 @@ def main() -> int:
     src.add_argument("--camera", default=None)
     src.add_argument("--video", default=None)
     ap.add_argument("--targets", required=True)
-    ap.add_argument("--model", default="pico", choices=["pico", "big"])
+    ap.add_argument("--model", default="atto", choices=list(GAZE_MODELS),
+                    help="gaze model variant; atto is fastest on CPU (default)")
     ap.add_argument("--width", type=int, default=640)
     ap.add_argument("--height", type=int, default=480)
     ap.add_argument("--detect-every-n", type=int, default=5,
@@ -134,9 +148,16 @@ def main() -> int:
     target_set = TargetSet.from_json(args.targets)
     print(f"targets: {', '.join(target_set.labels)}")
 
+    gaze_path = MODELS / GAZE_MODELS[args.model]
+    if not gaze_path.is_file():
+        print(f"[ERROR] model '{args.model}' not downloaded: {gaze_path.name}")
+        print("  run: ./scripts/download_models.sh --all")
+        return 1
+    print(f"gaze model: {args.model} ({gaze_path.name})")
+
     pipe = GazeTargetPipeline(
         target_set=target_set,
-        gazelle_model=PICO if args.model == "pico" else BIG,
+        gazelle_model=gaze_path,
         detector_model=MODELS / "deimv2_head.onnx",
         temporal_config=TemporalConfig(
             dwell_frames=args.dwell_frames,

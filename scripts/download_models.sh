@@ -26,16 +26,30 @@ echo "Models -> $DIR"
 fetch "deimv2_hgnetv2_pico_wholebody34_340query_n_batch_640x640.onnx" \
       "deimv2_head.onnx"
 
-# Gaze-LLE Pico distillation, 3.51 M params. The only variant usable on CPU
-# (~112 ms/frame on 8 cores). GazeFollow AUC 0.9491.
-fetch "gazelle_hgnetv2_pico_inout_distill_1x3x640x640_1xNx4.onnx" \
-      "gazelle_hgnetv2_pico_inout_distill_1x3x640x640_1xNx4.onnx"
+# Gaze-LLE Atto distillation, 2.93 M params @ 320x320. The default: measured at
+# 17 ms/frame on 8 CPU cores (35 FPS end-to-end) with GazeFollow AUC 0.9267.
+fetch "gazelle_hgnetv2_atto_inout_distill_1x3x320x320_1xNx4.onnx" \
+      "gazelle_hgnetv2_atto_inout_distill_1x3x320x320_1xNx4.onnx"
+
+# Gaze-LLE Femto, 3.15 M @ 416x416. 26 ms, AUC 0.9391. Good accuracy/speed step up.
+fetch "gazelle_hgnetv2_femto_inout_distill_1x3x416x416_1xNx4.onnx" \
+      "gazelle_hgnetv2_femto_inout_distill_1x3x416x416_1xNx4.onnx"
 
 if [[ "${1:-}" == "--all" ]]; then
-  # Gaze-LLE X distillation, 31.43 M params, GazeFollow AUC 0.9604.
-  # ~924 ms/frame on CPU -- only worthwhile with onnxruntime-gpu or TensorRT.
+  # Larger variants. On CPU these run at 1-12 FPS; the ViT ones need a GPU to be
+  # practical. Latencies measured at 640x480 on 8 cores.
+  fetch "gazelle_hgnetv2_pico_inout_distill_1x3x640x640_1xNx4.onnx" \
+        "gazelle_hgnetv2_pico_inout_distill_1x3x640x640_1xNx4.onnx"   #  82 ms
+  fetch "gazelle_hgnetv2_n_inout_distill_1x3x640x640_1xNx4.onnx" \
+        "gazelle_hgnetv2_n_inout_distill_1x3x640x640_1xNx4.onnx"      #  86 ms
+  fetch "gazelle_dinov3_vit_tiny_inout_1x3x640x640_1xNx4.onnx" \
+        "gazelle_dinov3_vit_tiny_inout_1x3x640x640_1xNx4.onnx"        # 254 ms
+  fetch "gazelle_dinov3_vit_tinyplus_inout_1x3x640x640_1xNx4.onnx" \
+        "gazelle_dinov3_vit_tinyplus_inout_1x3x640x640_1xNx4.onnx"    # 293 ms
+  fetch "gazelle_dinov3_vits16_inout_1x3x640x640_1xNx4.onnx" \
+        "gazelle_dinov3_vits16_inout_1x3x640x640_1xNx4.onnx"          # 603 ms
   fetch "gazelle_dinov3_vits16plus_inout_1x3x640x640_1xNx4.onnx" \
-        "gazelle_dinov3_vits16plus_inout_1x3x640x640_1xNx4.onnx"
+        "gazelle_dinov3_vits16plus_inout_1x3x640x640_1xNx4.onnx"      # 957 ms
 fi
 
 echo

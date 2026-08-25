@@ -53,37 +53,69 @@ python scripts/run_live.py --targets config/targets.json --video clip.mp4 \
     --headless --log events.csv
 ```
 
+### Start with the notebook
+
+If you want to understand the pipeline before running it live, work through
+**[`notebooks/01_explore_on_images.ipynb`](notebooks/01_explore_on_images.ipynb)**.
+It runs each stage on still images and plots what the model actually produced — the
+raw 64×64 heatmap, the 64×64 grid drawn over the frame, the target posterior as a
+bar chart, and belief curves over time. There is a cell at the end for dropping in
+your own photo.
+
+```bash
+pip install jupyter matplotlib
+jupyter notebook notebooks/01_explore_on_images.ipynb
+```
+
 Verification scripts (no camera needed):
 
 ```bash
 python scripts/verify_gaze.py testdata/*.jpg --out out/   # gaze localisation only
 python scripts/verify_targets.py                          # full stack + assertions
+python scripts/benchmark_models.py                        # latency + correctness
 ```
 
 ## Measured performance
 
-8-core CPU, no GPU, 640×480 frames:
+All 8 gaze variants, benchmarked on **8-core CPU, no GPU, 640×480** frames via
+`scripts/benchmark_models.py`. `+det FPS` assumes head detection every 5th frame.
+AUC is the published GazeFollow figure. `peak_ok` = heatmap peak still landed on
+the known ground-truth target.
 
-| Component | Latency | Notes |
-|---|---|---|
-| Head detector (DEIMv2 pico) | 44.8 ms | 28% of the frame budget |
-| Gaze-LLE **Pico** (3.51 M) | 111.8 ms | the usable option on CPU |
-| Gaze-LLE **X** (31.43 M) | 924.3 ms | ~1 FPS — needs a GPU |
+| Variant | Params | Size | Input | ms | gaze FPS | +det FPS | AUC | peak_ok |
+|---|---|---|---|---|---|---|---|---|
+| **Atto** (CNN) | 2.93 M | 12 M | 320² | **17.3** | 57.9 | **38.5** | 0.9267 | yes |
+| **Femto** (CNN) | 3.15 M | 13 M | 416² | 26.4 | 37.9 | 28.5 | 0.9391 | yes |
+| Pico (CNN) | 3.51 M | 16 M | 640² | 82.0 | 12.2 | 11.0 | 0.9491 | yes |
+| N (CNN) | 4.61 M | 16 M | 640² | 85.5 | 11.7 | 10.6 | 0.9481 | yes |
+| S (ViT) | 8.17 M | 35 M | 640² | 253.9 | 3.9 | 3.8 | 0.9545 | yes |
+| M (ViT) | 12.37 M | 52 M | 640² | 292.8 | 3.4 | 3.3 | 0.9564 | yes |
+| L (ViT) | 24.33 M | 100 M | 640² | 602.9 | 1.7 | 1.6 | 0.9593 | yes |
+| X (ViT) | 31.43 M | 128 M | 640² | 956.8 | 1.0 | 1.0 | 0.9604 | yes |
 
-End-to-end with Pico:
+Head detector (DEIMv2 pico, 6 MB): **43.5 ms**.
 
-| `--detect-every-n` | Throughput |
+**The key result: input resolution dominates CPU latency far more than parameter
+count.** Atto (2.93 M @ 320²) and Pico (3.51 M @ 640²) are similarly sized, yet Atto
+is **~4.7× faster** — almost entirely because 320² is a quarter of the pixels of
+640². And every variant localised correctly on the test image, so on CPU the extra
+capacity buys ~3% AUC for 4-55× the latency. **Atto is therefore the default.**
+
+The ViT variants need a GPU to be practical; the CNN variants (Atto/Femto/Pico/N)
+are the CPU-viable set.
+
+End-to-end measured throughput:
+
+| Config | Throughput |
 |---|---|
-| 1 (detect every frame) | 7.1 FPS |
-| 5 (cached head) | **10.0 FPS** (+41%) |
+| Atto, `--detect-every-n 5` | **35.0 FPS** |
+| Pico, `--detect-every-n 5` | 10.0 FPS |
+| Pico, `--detect-every-n 1` | 7.1 FPS |
 
 Head caching is nearly free in accuracy terms because a bed-bound patient's head
-barely moves between frames. **The latency requirement is loose** — the ~0.5-1 s
-dwell window dominates response time, so throughput buys *evidence* (frames to
-filter over), not responsiveness.
-
-For 15-30 FPS or the larger model, use a GPU (`onnxruntime-gpu`) or TensorRT on a
-Jetson.
+barely moves between frames. **The latency requirement is loose anyway** — the
+~0.5-1 s dwell window dominates response time, so throughput buys *evidence*
+(frames to filter over), not responsiveness.
 
 ## Verification results
 
