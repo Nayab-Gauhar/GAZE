@@ -1,0 +1,25 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Model weights: fetched via scripts/download_models.sh.
+# The 31M gaze model is 128 MB, above GitHub's 100 MB per-file limit.
+models/*.onnx
+
+# Verification images: fetched via scripts/fetch_testdata.py so that no
+# third-party image files are vendored here.
+testdata/*.jpg
+testdata/*.png
+testdata/*.mp4
+
+# Generated output
+out/
+*.csv
+
+# Third-party reference implementation, kept locally for I/O contract checking.
+reference/
+
+# Site-specific target layout (yours will differ; example is committed)
+config/targets.json

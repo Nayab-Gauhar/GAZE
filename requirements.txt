@@ -1,0 +1,13 @@
+onnxruntime>=1.20
+numpy>=2.0
+pillow>=10.0
+requests>=2.31
+
+# Use opencv-python locally (needs GUI windows for register_targets.py and
+# run_live.py). opencv-python-headless is only appropriate on a server with no
+# display, where you must pass --headless.
+opencv-python>=4.10
+
+# Optional GPU acceleration: replace onnxruntime with onnxruntime-gpu.
+# The 31M "big" model is ~1 FPS on CPU and needs a GPU to be usable.
+# onnxruntime-gpu>=1.20
