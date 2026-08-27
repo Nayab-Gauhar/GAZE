@@ -1,0 +1,162 @@
+/* Print stylesheet for the handbook — A4, academic book styling. */
+
+@page { size: A4; }
+
+:root {
+  --ink: #1a1a1a;
+  --soft: #4a4a4a;
+  --rule: #c9cdd4;
+  --accent: #14213d;
+  --accent2: #7a2f8f;
+  --good: #17612c;
+  --bad: #a8221a;
+  --bg: #f5f7fa;
+}
+
+body {
+  font-family: Georgia, "Times New Roman", "DejaVu Serif", serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* ---------- headings ---------- */
+h1 {
+  font-family: "Helvetica Neue", Arial, "DejaVu Sans", sans-serif;
+  font-size: 19pt;
+  color: var(--accent);
+  border-bottom: 2.5px solid var(--accent);
+  padding-bottom: 5px;
+  margin: 0 0 14px 0;
+  page-break-after: avoid;
+  page-break-before: always;
+  text-align: left;
+}
+h1:first-of-type { page-break-before: avoid; }
+h2 {
+  font-family: "Helvetica Neue", Arial, "DejaVu Sans", sans-serif;
+  font-size: 13.5pt;
+  color: var(--accent);
+  margin: 18px 0 6px 0;
+  page-break-after: avoid;
+  text-align: left;
+}
+h3 {
+  font-family: "Helvetica Neue", Arial, "DejaVu Sans", sans-serif;
+  font-size: 11.5pt;
+  color: var(--accent2);
+  margin: 14px 0 4px 0;
+  page-break-after: avoid;
+  text-align: left;
+}
+h4 {
+  font-family: "Helvetica Neue", Arial, "DejaVu Sans", sans-serif;
+  font-size: 10.5pt;
+  color: var(--soft);
+  margin: 10px 0 3px 0;
+  page-break-after: avoid;
+  text-align: left;
+}
+
+p { margin: 0 0 7px 0; orphans: 2; widows: 2; }
+strong { color: #000; }
+em { color: var(--soft); }
+
+ul, ol { margin: 5px 0 8px 0; padding-left: 22px; }
+li { margin-bottom: 3px; }
+
+/* ---------- tables ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: "Helvetica Neue", Arial, "DejaVu Sans", sans-serif;
+  font-size: 8.5pt;
+  margin: 9px 0 12px 0;
+  page-break-inside: avoid;
+  text-align: left;
+}
+th {
+  background: var(--accent);
+  color: #fff;
+  padding: 4px 6px;
+  text-align: left;
+  font-weight: 600;
+  line-height: 1.3;
+}
+td {
+  border-bottom: 0.5px solid var(--rule);
+  padding: 4px 6px;
+  vertical-align: top;
+  line-height: 1.35;
+}
+tr:nth-child(even) td { background: var(--bg); }
+
+/* ---------- code and diagrams ---------- */
+code {
+  font-family: "DejaVu Sans Mono", Consolas, monospace;
+  font-size: 8.5pt;
+  background: #eef1f6;
+  padding: 0 3px;
+  border-radius: 2px;
+}
+pre {
+  font-family: "DejaVu Sans Mono", Consolas, monospace;
+  font-size: 8pt;
+  line-height: 1.32;
+  background: #f7f9fc;
+  border-left: 3px solid var(--accent);
+  padding: 8px 10px;
+  margin: 9px 0 12px 0;
+  page-break-inside: avoid;
+  white-space: pre;
+  overflow: visible;
+  text-align: left;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+blockquote {
+  border-left: 3px solid var(--accent2);
+  background: var(--bg);
+  margin: 9px 0;
+  padding: 6px 12px;
+  font-size: 10pt;
+  page-break-inside: avoid;
+}
+
+hr { border: none; border-top: 0.5px solid var(--rule); margin: 14px 0; }
+
+/* ---------- structural helpers ---------- */
+.pagebreak { page-break-after: always; height: 0; }
+
+.titlemeta {
+  margin-top: 40px;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 10pt;
+  color: var(--soft);
+  text-align: left;
+}
+
+.partintro {
+  background: var(--bg);
+  border-left: 4px solid var(--accent2);
+  padding: 10px 14px;
+  margin: 12px 0 16px 0;
+  font-size: 10pt;
+}
+
+/* ---------- table of contents ---------- */
+.toc { page-break-before: always; page-break-after: always; }
+.toc h1 { page-break-before: avoid; }
+.toc a { color: var(--ink); text-decoration: none; }
+.toc-l1 {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 10pt;
+  margin: 9px 0 3px 0;
+  color: var(--accent);
+}
+.toc-l2 { font-size: 9.5pt; margin-left: 14px; }
+.toc-l3 { font-size: 9pt; margin-left: 30px; color: var(--soft); }
